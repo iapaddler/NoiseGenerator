@@ -9,12 +9,11 @@
 
 # Note: refer to `gcc -dM -E - < /dev/null` for what the compiler already defines automatically before adding things.
 
-########## Definitions ##########
 CWD = $(shell pwd)
 OS=linux
 CC=gcc
 NGEN_VER:="0.1"
-SRC_C_FILES:=./src/ngen.c ./src/httpd.c
+SRC_C_FILES:=./src/ngen.c ./src/httpd.c ./src/pwire.c
 ARCH=$(shell uname -m)
 BIN=./bin/ng
 CFLAGS=-Wall -O2 -D_REENTRANT
