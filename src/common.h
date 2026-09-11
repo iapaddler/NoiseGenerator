@@ -9,13 +9,21 @@
 #define CHANNELS 2
 #define FREQUENCY 440.0
 //#define VOLUME  0.25f
-#define VOLUME 0.15f
+//#define VOLUME 0.15f
+#define VOLUME 0.05f
+#define VOLUME_CHANGE 0.01f
+#define TONE 0.05f
+#define TONE_CHANGE 0.01f
 #define START_SEED (uint32_t)589765974UL
 #define PORT 9000
 #define BUFFER_SIZE 2048
 #define PWIRE_THREAD 1
 #define HTTPD_THREAD 2
 #define MAXFDS 2
+#define API_VOL_UP "/api/vup"
+#define API_VOL_DOWN "/api/vdown"
+#define API_TONE_UP "/api/tup"
+#define API_TONE_DOWN "/api/tdown"
 
 struct app {
     struct pw_main_loop *loop;
@@ -37,5 +45,11 @@ struct error_event {
 extern void *pwire_start(void *arg);
 extern void *httpd_start(void *arg);
 extern int report_error(int, int, int);
+extern float pw_vol_inc(int);
+extern float pw_vol_dec(int);
+extern float pw_get_vol(void);
+extern float pw_tone_inc(int);
+extern float pw_tone_dec(int);
+extern float pw_get_tone(void);
 
 #endif // __COMMON_H__

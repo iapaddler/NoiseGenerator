@@ -37,3 +37,4 @@ $ bluetoothctl connect 08:DF:1F:00:1E:49
 ### Get status of the speaker
 $ bluetoothctl info 08:DF:1F:00:1E:49
 
+Thanks to https://github.com/alessandrocuda/noise_generator for the reference

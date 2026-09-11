@@ -8,6 +8,38 @@
 
 #include "common.h"
 
+/*
+ * Definition of an HTTP request:
+ * Method SP Request-URI SP HTTP-Version CRLF
+ * example: GET /api/v1/users?id=42 HTTP/1.1\r\n
+*/
+static int
+execute_api(char *buffer, ssize_t bytes_recvd) {
+    char *api;
+    size_t slen = strlen("GET ");
+
+    // If not a get method, ignore
+    if (strncmp("GET ", buffer, slen) == 0) {
+        api = buffer + slen;
+
+        // inc & dec values by a default amount
+        if (strncmp(API_VOL_UP, api, strlen(API_VOL_UP)) == 0) {
+            pw_vol_inc(0);
+            return 0;
+        } else if (strncmp(API_VOL_DOWN, api, strlen(API_VOL_DOWN)) == 0) {
+            pw_vol_dec(0);
+            return 0;
+        } else if (strncmp(API_TONE_UP, api, strlen(API_TONE_UP)) == 0) {
+            pw_tone_inc(0);
+            return 0;
+        } else if (strncmp(API_TONE_DOWN, api, strlen(API_TONE_DOWN)) == 0) {
+            pw_tone_dec(0);
+            return 0;
+        }
+    }
+    return -1;
+}
+
 // TODO: pass the port from a command line arg?
 void *
 httpd_start(void *arg) {
@@ -39,20 +71,34 @@ httpd_start(void *arg) {
     // Bind to PORT
     if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         perror("Bind failed");
-        close(server_fd);
         report_error(carg->efd, HTTPD_THREAD, errno);
+        close(server_fd);
         return NULL;
     }
 
     // Listen for incoming connections (backlog queue size of 10)
     if (listen(server_fd, 10) < 0) {
         perror("Listen failed");
-        close(server_fd);
         report_error(carg->efd, HTTPD_THREAD, errno);
+        close(server_fd);
         return NULL;
     }
 
-    printf("HTTP Server is running on http://localhost:%d\n", PORT);
+    if (gethostname(buffer, (size_t)BUFFER_SIZE) != 0) {
+        perror("gethostname failed");
+        report_error(carg->efd, HTTPD_THREAD, errno);
+        close(server_fd);
+        return NULL;
+    }
+    /*
+      Do we want to get the IP addr? Just for display
+      int getaddrinfo(const char *restrict node,
+                      const char *restrict service,
+                      const struct addrinfo *restrict hints,
+                      struct addrinfo **restrict res);
+     */
+
+    printf("HTTP Server is running on http://%s:%d\n", buffer, PORT);
 
     // loop accepting clients
     while (1) {
@@ -64,11 +110,17 @@ httpd_start(void *arg) {
 
         // Clear buffer and read the raw HTTP request text
         memset(buffer, 0, BUFFER_SIZE);
-        ssize_t bytes_read = read(client_fd, buffer, BUFFER_SIZE - 1);
-        
-        if (bytes_read > 0) {
-            // Print the received request header to the terminal
+        ssize_t bytes_recvd = recv(client_fd, buffer, BUFFER_SIZE, 0);
+
+        if (bytes_recvd > 0) {
+            // TBD: handle the root request distinct from an API request
+            // TBD: get root response from index.html
+
+            // Display the received request header
             printf("--- Received Request ---\n%s\n------------------------\n", buffer);
+
+            // If this fails, we ignore. TBD: display an error on the browser?
+            execute_api(buffer, bytes_recvd);
 
             // Hardcoded raw text response: Status Line + Headers + Empty Line + HTML Body
             const char *http_response = 
@@ -86,7 +138,7 @@ httpd_start(void *arg) {
                 "</html>";
 
             // Send the response back to the client
-            write(client_fd, http_response, strlen(http_response));
+            send(client_fd, http_response, strlen(http_response), 0);
         }
 
         close(client_fd);

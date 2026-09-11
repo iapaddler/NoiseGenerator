@@ -98,7 +98,7 @@ main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     
-    printf("Running noise generator and management web server\n(http://ip_addr:9000)\n(Press Ctrl+C to exit)...\n");
+    printf("Running noise generator and management web server\n(Press Ctrl+C to exit)...\n");
 
     while (1) {
         if (check_error(cargs.efd) != 0) {
