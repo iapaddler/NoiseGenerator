@@ -1,6 +1,13 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
+#ifndef bool
+typedef unsigned int bool;
+#endif
+
+#define TRUE 1
+#define FALSE 0
+
 // Get the name of the Bluetooth speaker. In the example case, a Bose speaker
 // $ pactl list sinks short
 #define SPEAKER_NAME "bluez_output.08_DF_1F_00_1E_49.1"
@@ -17,6 +24,7 @@
 #define START_SEED (uint32_t)589765974UL
 #define PORT 9000
 #define BUFFER_SIZE 2048
+#define RESPONSE_SIZE 1024
 #define PWIRE_THREAD 1
 #define HTTPD_THREAD 2
 #define MAXFDS 2

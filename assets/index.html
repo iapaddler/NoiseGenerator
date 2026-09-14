@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sleep Sound Control</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .control {
+            margin-bottom: 25px;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        p {
+            margin-top: 8px;
+            color: #555;
+        }
+
+        #status {
+            margin-top: 30px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Sleep Sound Control</h1>
+
+    <div class="control">
+        <button onclick="callAPI('/api/vup')">
+            Louder
+        </button>
+        <p>Increase the volume.</p>
+    </div>
+
+    <div class="control">
+        <button onclick="callAPI('/api/vdown')">
+            Quieter
+        </button>
+        <p>Decrease the volume.</p>
+    </div>
+
+    <div class="control">
+        <button onclick="callAPI('/api/tup')">
+            Tone Increase
+        </button>
+        <p>Increase the tone of the sound.</p>
+    </div>
+
+    <div class="control">
+        <button onclick="callAPI('/api/tdown')">
+            Tone Decrease
+        </button>
+        <p>Decrease the tone of the sound.</p>
+    </div>
+
+    <div id="status">
+        Ready.
+    </div>
+
+    <script>
+        async function callAPI(path)
+        {
+            const status = document.getElementById("status");
+
+            status.textContent = "Calling " + path + "...";
+            try {
+                const response = await fetch(path, {
+                    method: "GET"
+                });
+
+                if (!response.ok) {
+                    throw new Error(
+                        "HTTP " + response.status
+                    );
+                }
+
+                const text = await response.text();
+
+                // Wait 1 second before displaying the response
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                status.textContent = text || "OK";
+            }
+            catch (error) {
+                status.textContent =
+                    "Error: " + error.message;
+            }
+        }
+    </script>
+
+</body>
+</html>
+
