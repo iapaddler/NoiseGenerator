@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +9,7 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <string.h>
 
 #include "common.h"
 
@@ -64,6 +67,12 @@ server_start(struct cmd_args *carg) {
                       const struct addrinfo *restrict hints,
                       struct addrinfo **restrict res);
      */
+
+    if (strcasestr((const char *)host, (const char *)"unoq") == NULL) {
+        strncpy(speaker_name, RPI_SPEAKER_NAME, strlen(RPI_SPEAKER_NAME) + 1);
+    } else {
+        strncpy(speaker_name, UNOQ_SPEAKER_NAME, strlen(RPI_SPEAKER_NAME) + 1);
+    }
 
     printf("HTTP Server is running on http://%s:%d\n", host, PORT);
     return server_fd;

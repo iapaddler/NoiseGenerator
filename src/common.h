@@ -10,7 +10,9 @@ typedef unsigned int bool;
 
 // Get the name of the Bluetooth speaker. In the example case, a Bose speaker
 // $ pactl list sinks short
-#define SPEAKER_NAME "bluez_output.08_DF_1F_00_1E_49.1"
+//#define SPEAKER_NAME "bluez_output.08_DF_1F_00_1E_49.1"
+#define RPI_SPEAKER_NAME "bluez_output.08_DF_1F_00_1E_49.1"
+#define UNOQ_SPEAKER_NAME "bluez_output_08_DF_1F_7E_B2_64.1" 
 #define SAMPLE_RATE 48000
 //#define SAMPLE_RATE 44100
 #define CHANNELS 2
@@ -49,6 +51,8 @@ struct error_event {
     int thread_id;
     int error;
 };
+
+extern char speaker_name[64];
 
 extern void *pwire_start(void *arg);
 extern void *httpd_start(void *arg);

@@ -6,6 +6,7 @@
 #include <spa/param/audio/format-utils.h>
 
 #include "common.h"
+char speaker_name[64];
 
 // Variable for a quick and dirty PRNG
 static uint32_t rqd_seed = 0UL;
@@ -256,7 +257,7 @@ pwire_start(void *arg)
             PW_KEY_MEDIA_CATEGORY, "Playback",
             PW_KEY_MEDIA_ROLE, "Music",
             PW_KEY_TARGET_OBJECT,
-            SPEAKER_NAME,
+            speaker_name,
             NULL),
         &stream_events,
         &app
