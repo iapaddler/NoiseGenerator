@@ -61,17 +61,15 @@ restart PipeWire when a client connects.
 
 
 ### System wide
-`
-sudo mkdir -p /var/lib/lightdm/.config/systemd/user
+`sudo mkdir -p /var/lib/lightdm/.config/systemd/user`
 
-for u in pipewire.service pipewire.socket wireplumber.service \
-         pipewire-pulse.service pipewire-pulse.socket
-do
-    sudo ln -sf /dev/null "/var/lib/lightdm/.config/systemd/user/$u"
-done
+`for u in pipewire.service pipewire.socket wireplumber.service \`
+`         pipewire-pulse.service pipewire-pulse.socket`
+`do`
+`    sudo ln -sf /dev/null "/var/lib/lightdm/.config/systemd/user/$u"`
+`done`
 
-sudo chown -R lightdm:lightdm /var/lib/lightdm/.config
-`
+`sudo chown -R lightdm:lightdm /var/lib/lightdm/.config`
 
 `sudo ls -l /var/lib/lightdm/.config/systemd/user/`
 
