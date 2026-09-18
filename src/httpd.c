@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <syslog.h>
 
 #include "common.h"
 
@@ -23,7 +24,7 @@ server_start(struct cmd_args *carg) {
     // 1. Create the standard TCP socket
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) {
-        perror("Socket creation failed");
+        syslog(LOG_ERR, "socket: %s", strerror(errno));
         report_error(carg->efd, HTTPD_THREAD, errno);
         return -1;
     }
@@ -40,7 +41,7 @@ server_start(struct cmd_args *carg) {
 
     // Bind to PORT
     if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        perror("Bind failed");
+        syslog(LOG_ERR, "bind: %s", strerror(errno));
         report_error(carg->efd, HTTPD_THREAD, errno);
         close(server_fd);
         return -1;
@@ -48,14 +49,14 @@ server_start(struct cmd_args *carg) {
 
     // Listen for incoming connections (backlog queue size of 10)
     if (listen(server_fd, 10) < 0) {
-        perror("Listen failed");
+        syslog(LOG_ERR, "listen: %s", strerror(errno));
         report_error(carg->efd, HTTPD_THREAD, errno);
         close(server_fd);
         return -1;
     }
 
     if (gethostname(host, (size_t)BUFFER_SIZE) != 0) {
-        perror("gethostname failed");
+        syslog(LOG_ERR, "gethostname: %s", strerror(errno));
         report_error(carg->efd, HTTPD_THREAD, errno);
         close(server_fd);
         return -1;
@@ -74,7 +75,7 @@ server_start(struct cmd_args *carg) {
         strncpy(speaker_name, UNOQ_SPEAKER_NAME, strlen(RPI_SPEAKER_NAME) + 1);
     }
 
-    printf("HTTP Server is running on http://%s:%d\n", host, PORT);
+    syslog(LOG_NOTICE, "HTTP Server is running on http://%s:%d\n", host, PORT);
     return server_fd;
 }
 
@@ -130,7 +131,7 @@ httpd_start(void *arg) {
 
         client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len);
         if (client_fd < 0) {
-            perror("Accept failed");
+            syslog(LOG_ERR, "accept: %s", strerror(errno));
             continue;
         }
 
@@ -140,20 +141,20 @@ httpd_start(void *arg) {
 
         if (bytes_recvd > 0) {
             // Display the received request header
-            printf("--- Received Request ---\n%s\n------------------------\n", buffer);
+            syslog(LOG_DEBUG, "--- Received Request ---\n%s\n------------------------\n", buffer);
 
             // If this fails, we ignore. TODO: display an error on the browser?
             if (execute_api(buffer, bytes_recvd) == TRUE) {
 
                 // Found an API, return abbreviated HTML.
                 if ((http_response = calloc(1, RESPONSE_SIZE)) == NULL) {
-                    perror("calloc");
+                    syslog(LOG_ERR, "calloc: %s", strerror(errno));
                     continue;
                 }
 
                 if (snprintf(http_response, (size_t)RESPONSE_SIZE,
                              "HTTP/1.1 204 No Content\r\nCache-Control: no-cache") < 0) {
-                    perror("snprintf failed");
+                    syslog(LOG_ERR, "snprintf: %s", strerror(errno));
                     free(http_response);
                     continue;
                 }
@@ -165,12 +166,12 @@ httpd_start(void *arg) {
 
                 ifd = open("assets/index.html", O_RDONLY);
                 if (ifd < 0) {
-                    perror("open");
+                    syslog(LOG_ERR, "open: %s", strerror(errno));
                     continue;
                 }
 
                 if (fstat(ifd, &statbuf) == -1) {
-                    perror("fstat");
+                    syslog(LOG_ERR, "fstat: %s", strerror(errno));
                     continue;
                 }
 
@@ -179,13 +180,13 @@ httpd_start(void *arg) {
                 rsize = statbuf.st_size + RESPONSE_SIZE;
 
                 if ((index_buf = calloc(1, isize)) == NULL) {
-                    perror("calloc");
+                    syslog(LOG_ERR, "calloc: %s", strerror(errno));
                     close(ifd);
                     continue;
                 }
 
                 if ((http_response = calloc(1, rsize)) == NULL) {
-                    perror("calloc");
+                    syslog(LOG_ERR, "calloc: %s", strerror(errno));
                     close(ifd);
                     free(index_buf);
                     continue;
@@ -193,7 +194,7 @@ httpd_start(void *arg) {
 
                 rc = read(ifd, index_buf, isize);
                 if (rc <= 0) {
-                    perror("read");
+                    syslog(LOG_ERR, "read: %s", strerror(errno));
                     close(ifd);
                     free(index_buf);
                     free(http_response);
@@ -209,7 +210,7 @@ httpd_start(void *arg) {
                              "Connection: close\r\n"
                              "\r\n" // This blank line is required to separate headers from the body
                              "%s", index_buf) < 0) {
-                    perror("snprintf failed");
+                    syslog(LOG_ERR, "snprintf: %s", strerror(errno));
                     free(index_buf);
                     free(http_response);
                     continue;

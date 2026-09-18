@@ -7,6 +7,8 @@
 #include <pthread.h>
 #include <poll.h>
 #include <strings.h>
+#include <syslog.h>
+#include <string.h>
 
 #include "common.h"
 
@@ -62,8 +64,10 @@ main(int argc, char *argv[])
     pthread_t pwireid, httpid;
     int pipefd[2];
 
+    openlog("noise-generator", LOG_CONS, LOG_USER);
+
     if (pipe(pipefd) == -1) {
-        perror("pipe");
+        syslog(LOG_ERR, "pipe: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -79,35 +83,35 @@ main(int argc, char *argv[])
 
     // Hold for setting attrs later
     if (pthread_attr_init(&attr) != 0) {
-        perror("ERROR: pthread_attr_init");
+        syslog(LOG_ERR, "pthread_attr_init: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
     
-    if (pthread_create(&pwireid, &attr, pwire_start, (void *)&cargs)) { 
-        perror("ERROR: pthread_create");
+    if (pthread_create(&pwireid, &attr, pwire_start, (void *)&cargs)) {
+        syslog(LOG_ERR, "pthread_create: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
-    if (pthread_create(&httpid, &attr, httpd_start, (void *)&cargs)) { 
-        perror("ERROR: pthread_create");
+    if (pthread_create(&httpid, &attr, httpd_start, (void *)&cargs)) {
+        syslog(LOG_ERR, "pthread_create: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     if (pthread_attr_destroy(&attr) != 0) {
-        perror("ERROR: pthread_attr_destroy");
+        syslog(LOG_ERR, "pthread_attr_destroy: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
-    
-    printf("Running noise generator and management web server\n(Press Ctrl+C to exit)...\n");
+
 
     while (1) {
         if (check_error(cargs.efd) != 0) {
-            fprintf(stderr,"ERROR: thread failure\n");
+            syslog(LOG_ERR, "thread failure: %s", strerror(errno));
             exit(EXIT_FAILURE);
         }
 
         sleep(5);
     }
-    
+
+    closelog();
     return 0;
 }

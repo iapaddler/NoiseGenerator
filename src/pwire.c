@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <math.h>
 #include <pthread.h>
+#include <string.h>
+#include <syslog.h>
 #include <pipewire/pipewire.h>
 #include <spa/param/audio/format-utils.h>
 
@@ -237,6 +239,7 @@ pwire_start(void *arg)
         SPA_POD_BUILDER_INIT(buffer, sizeof(buffer));
 
     if (arg == NULL) {
+        syslog(LOG_ERR, "no argument passed to pwire_start");
         fprintf(stderr,"ERROR: no argument passed to pwire_start\n");
         return NULL;
     }
@@ -283,7 +286,7 @@ pwire_start(void *arg)
 
     srandqd(START_SEED);
 
-    printf("Playing 440 Hz...\n");
+    syslog(LOG_NOTICE, "Playing 440 Hz...");
 
     pw_main_loop_run(app.loop);
 
