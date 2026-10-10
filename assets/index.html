@@ -133,7 +133,7 @@
                     text += "Thermal:\n";
 
                     for (const thermal of data.thermals) {
-                        text += `  ${thermal.type}: ${thermal.temp_c.toFixed(1)} °C\n`;
+                        text += `  ${thermal.type}: ${thermal.temp.toFixed(1)} °F\n`;
                     }
                 } else {
                     text += "Thermal: unavailable\n";

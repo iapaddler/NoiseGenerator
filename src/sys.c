@@ -88,7 +88,7 @@ sys_thermals()
         // Read the current temp value
         temp = sys_get_temp(g_therm[i].path);
 
-        snprintf(entry, THERMAL_SIZE, "{\"type\":%s,\"temp\":%.2f},", g_therm[i].name, temp);
+        snprintf(entry, THERMAL_SIZE, "{\"type\":\"%s\",\"temp\":%.2f},", g_therm[i].name, temp);
         strncat(therms, entry, THERMAL_SIZE);
     }
 
