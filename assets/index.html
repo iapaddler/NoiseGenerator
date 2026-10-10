@@ -74,6 +74,14 @@
         Ready.
     </div>
 
+    <div class="system-info">
+      <h3>System</h3>
+      <pre id="systemStats">
+        CPU: --
+        Memory: --
+        Thermals: --</pre>
+    </div>
+
     <script>
         async function callAPI(path)
         {
@@ -103,6 +111,43 @@
                     "Error: " + error.message;
             }
         }
+
+        async function updateSystemStats() {
+            const stats = document.getElementById("systemStats");
+
+            try {
+                const response = await fetch("/api/system");
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                let text = "";
+
+                text += `CPU:    ${data.cpu_percent.toFixed(1)}%\n`;
+                text += `Memory: ${data.memory_free} / ${data.memory_total} GB\n`;
+
+                if (data.thermals && data.thermals.length > 0) {
+                    text += "Thermal:\n";
+
+                    for (const thermal of data.thermals) {
+                        text += `  ${thermal.type}: ${thermal.temp_c.toFixed(1)} °C\n`;
+                    }
+                } else {
+                    text += "Thermal: unavailable\n";
+                }
+
+                stats.textContent = text;
+
+            } catch (err) {
+                stats.textContent = `System statistics unavailable: ${err.message}`;
+            }
+        }
+
+      updateSystemStats();
+      setInterval(updateSystemStats, 2000);
     </script>
 
 </body>

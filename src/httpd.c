@@ -16,7 +16,8 @@
 
 // TODO: pass the port from a command line arg?
 static int
-server_start(struct cmd_args *carg) {
+server_start(struct cmd_args *carg)
+{
     int server_fd;
     struct sockaddr_in server_addr;
     char host[BUFFER_SIZE];
@@ -85,7 +86,8 @@ server_start(struct cmd_args *carg) {
  * example: GET /api/v1/users?id=42 HTTP/1.1\r\n
 */
 static bool
-execute_api(char *buffer, ssize_t bytes_recvd) {
+execute_api(char *buffer, ssize_t bytes_recvd)
+{
     char *api;
     size_t slen = strlen("GET ");
 
@@ -112,7 +114,8 @@ execute_api(char *buffer, ssize_t bytes_recvd) {
 }
 
 void *
-httpd_start(void *arg) {
+httpd_start(void *arg)
+{
     int server_fd;
     struct cmd_args *carg = arg;
 
@@ -126,7 +129,7 @@ httpd_start(void *arg) {
         int client_fd;
         struct sockaddr_in client_addr;
         socklen_t client_addr_len = sizeof(client_addr);
-        char *http_response;
+        char *http_response, *status_response;
         char buffer[BUFFER_SIZE];
 
         client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_len);
@@ -158,6 +161,26 @@ httpd_start(void *arg) {
                     free(http_response);
                     continue;
                 }
+            } else if ((status_response = sys_api(buffer, bytes_recvd))) {
+                // system status API, return JSON
+                if ((http_response = calloc(1, RESPONSE_SIZE)) == NULL) {
+                    syslog(LOG_ERR, "calloc: %s", strerror(errno));
+                    free(status_response);
+                    continue;
+                }
+
+                if (snprintf(http_response, strlen(status_response) + 1024,
+                             "HTTP/1.1 200 OK\r\n"
+                             "Content-Type: text/html; charset=UTF-8\r\n"
+                             "Connection: close\r\n"
+                             "\r\n" // This blank line is required to separate headers from the body
+                             "%s", status_response) < 0) {
+                    syslog(LOG_ERR, "snprintf: %s", strerror(errno));
+                    free(status_response);
+                    free(http_response);
+                    continue;
+                }
+                free(status_response);
             } else {
                 int ifd, rc;
                 size_t isize, rsize;

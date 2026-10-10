@@ -14,7 +14,8 @@
 
 // Check if a worker thread wrote to the error pipe
 static int
-check_error(int efd) {
+check_error(int efd)
+{
     int rc, numfds;
     struct pollfd fds[MAXFDS];
 
@@ -43,7 +44,8 @@ check_error(int efd) {
 
 // Function used by worker threads to report an error
 int
-report_error(int efd, int id, int error) {
+report_error(int efd, int id, int error)
+{
     struct error_event event = {
         .thread_id = id,
         .error = error
@@ -73,6 +75,8 @@ main(int argc, char *argv[])
 
     // read fd of thepipe set to non-blocking
     fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
+
+    sys_init();
     
     struct cmd_args cargs = {
         .argc = &argc,

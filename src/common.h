@@ -1,8 +1,14 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#ifndef bool
-typedef unsigned int bool;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+    /* C99 and later, including C23. */
+    #include <stdbool.h>
+#else
+    /* Legacy C compiler, predating C99. */
+    typedef unsigned int bool;
+    #define true  1
+    #define false 0
 #endif
 
 #define TRUE 1
@@ -26,7 +32,8 @@ typedef unsigned int bool;
 #define START_SEED (uint32_t)589765974UL
 #define PORT 9000
 #define BUFFER_SIZE 2048
-#define RESPONSE_SIZE 1024
+#define RESPONSE_SIZE 4096
+#define RESPONSE_SYS_SIZE 2048
 #define PWIRE_THREAD 1
 #define HTTPD_THREAD 2
 #define MAXFDS 2
@@ -34,6 +41,10 @@ typedef unsigned int bool;
 #define API_VOL_DOWN "/api/vdown"
 #define API_TONE_UP "/api/tup"
 #define API_TONE_DOWN "/api/tdown"
+#define API_SYSTEM "/api/system"
+#define THERMAL_DIR "/sys/class/thermal/"
+#define THERMAL_ZONE "thermal_zone"
+#define THERMAL_SIZE 1024
 
 struct app {
     struct pw_main_loop *loop;
@@ -63,5 +74,7 @@ extern float pw_get_vol(void);
 extern float pw_tone_inc(int);
 extern float pw_tone_dec(int);
 extern float pw_get_tone(void);
+extern char *sys_api(char *, ssize_t);
+extern bool sys_init(void);
 
 #endif // __COMMON_H__

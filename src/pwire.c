@@ -137,7 +137,8 @@ static const struct pw_stream_events stream_events = {
 
 // Increase the volume
 float
-pw_vol_inc(int amount) {
+pw_vol_inc(int amount)
+{
     pthread_mutex_lock(&lock);
 
     // Use a default amount if none specified
@@ -153,7 +154,8 @@ pw_vol_inc(int amount) {
 
 // Decrease the volume
 float
-pw_vol_dec(int amount) {
+pw_vol_dec(int amount)
+{
     pthread_mutex_lock(&lock);
 
     // Don't let it go to zero
@@ -175,7 +177,8 @@ pw_vol_dec(int amount) {
 
 // Get the volume
 float
-pw_get_vol() {
+pw_get_vol()
+{
     pthread_mutex_lock(&lock);
     float lvol = volume;
     pthread_mutex_unlock(&lock);
@@ -184,7 +187,8 @@ pw_get_vol() {
 
 // Increase the tone
 float
-pw_tone_inc(int amount) {
+pw_tone_inc(int amount)
+{
     pthread_mutex_lock(&lock);
 
     // Use a default amount if none specified
@@ -200,7 +204,8 @@ pw_tone_inc(int amount) {
 
 // Decrease the tone
 float
-pw_tone_dec(int amount) {
+pw_tone_dec(int amount)
+{
     pthread_mutex_lock(&lock);
 
     // Don't let it go to zero
@@ -222,7 +227,8 @@ pw_tone_dec(int amount) {
 
 // Get the tone
 float
-pw_get_tone() {
+pw_get_tone()
+{
     pthread_mutex_lock(&lock);
     float ltone = tone;
     pthread_mutex_unlock(&lock);
