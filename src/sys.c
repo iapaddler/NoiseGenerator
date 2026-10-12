@@ -21,6 +21,36 @@ struct thermal {
 static struct thermal *g_therm;
 static uint32_t g_num_thermals;
 
+static char *
+sys_get_type(char *path)
+{
+    int zfd, rc;
+    char *type;
+
+    if ((type = calloc(1, NAME_MAX)) == NULL) {
+        syslog(LOG_ERR, "calloc: %s", strerror(errno));
+        return NULL;
+    }
+
+
+    zfd = open(path, O_RDONLY);
+    if (zfd < 0) {
+        syslog(LOG_ERR, "open: %s", strerror(errno));
+        return NULL;
+    }
+
+    if ((rc = read(zfd, type, NAME_MAX)) <= 0) {
+        syslog(LOG_ERR, "read: %s", strerror(errno));
+        close(zfd);
+        return NULL;
+    }
+
+    type[strlen(type) - 1] = '\0';
+    close(zfd);
+
+    return type;
+}
+
 static double
 sys_get_temp(char *path)
 {
@@ -49,13 +79,15 @@ sys_get_temp(char *path)
     }
 
     close(zfd);
+
+    //Convert from micro C to F
     temp = ((temp/1000) * 1.8) + 32;
 
     return temp;
 }
 
 static bool
-sys_list_thermals(void)
+__attribute__((unused)) sys_list_thermals(void)
 {
     for (uint32_t i = 0; i < g_num_thermals; i++) {
         printf("Thermal(%d): %s is %.2f from %s\n", i, g_therm[i].name, g_therm[i].temp, g_therm[i].path);
@@ -218,10 +250,9 @@ sys_init(void)
     i = 0;
     while ((dent = readdir(tdir)) != NULL) {
         if ((strncmp(dent->d_name, THERMAL_ZONE, strlen(THERMAL_ZONE)) == 0) && (i <= g_num_thermals)) {
-            int zfd, rc, nc;
-            char *end;
+            int nc;
+            char *type;
             char zone_entry[PATH_MAX];
-            char zone_value[NAME_MAX];
 
             // Get the zone type
             nc = snprintf(zone_entry, PATH_MAX, "%s%s/type", THERMAL_DIR, dent->d_name);
@@ -230,56 +261,18 @@ sys_init(void)
                 continue;
             }
 
-            zfd = open(zone_entry, O_RDONLY);
-            if (zfd < 0) {
-                syslog(LOG_ERR, "open: %s", strerror(errno));
-                continue;
-            }
-
-            if ((rc = read(zfd, zone_value, NAME_MAX)) <= 0) {
-                syslog(LOG_ERR, "read: %s", strerror(errno));
-                g_therm[i].name[0] = (char)0;
-                close(zfd);
-                continue;
-            }
-
-            zone_value[strlen(zone_value) - 1] = '\0';
-            strncpy(g_therm[i].name, zone_value, NAME_MAX);
-
-            close(zfd);
-            bzero(zone_value, sizeof zone_value);
+            type = sys_get_type(zone_entry);
+            strncpy(g_therm[i].name, type, NAME_MAX);
+            free(type);
 
             // Get the zone temp
             snprintf(zone_entry, PATH_MAX, "%s%s/temp", THERMAL_DIR, dent->d_name);
+            double temp = sys_get_temp(zone_entry);
 
-            zfd = open(zone_entry, O_RDONLY);
-            if (zfd < 0) {
-                syslog(LOG_ERR, "open: %s", strerror(errno));
-                continue;
-            }
-
-            if ((rc = read(zfd, zone_value, NAME_MAX)) <= 0) {
-                syslog(LOG_ERR, "read: %s", strerror(errno));
-                close(zfd);
-                continue;
-            }
-
-            // Save the path to the temp value for future reads
+            // Save the current temp and path values
+            g_therm[i].temp =  temp;
             strncpy(g_therm[i].path, zone_entry, PATH_MAX);
 
-            // Save the current temp value
-            g_therm[i].temp =  strtod((const char *)zone_value, &end);
-            if (end == zone_value || errno == ERANGE) {
-                syslog(LOG_ERR, "strtod: %s", strerror(errno));
-                g_therm[i].temp = (double)0.0;
-                close(zfd);
-                continue;
-            }
-
-            close(zfd);
-            bzero(zone_value, sizeof zone_value);
-
-            g_therm[i].temp = ((g_therm[i].temp/1000) * 1.8) + 32;
             i++;
         }
     }
