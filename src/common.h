@@ -45,6 +45,9 @@
 #define THERMAL_DIR "/sys/class/thermal/"
 #define THERMAL_ZONE "thermal_zone"
 #define THERMAL_SIZE 1024
+#define MEM_FILE "/proc/meminfo"
+#define CPU_FILE "/proc/stat"
+#define UI_SAMPLE_RATE 2
 
 struct app {
     struct pw_main_loop *loop;

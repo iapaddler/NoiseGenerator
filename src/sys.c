@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -20,6 +22,11 @@ struct thermal {
 
 static struct thermal *g_therm;
 static uint32_t g_num_thermals;
+
+struct memory {
+    double mtotal;
+    double mfree;
+};
 
 static char *
 sys_get_type(char *path)
@@ -137,33 +144,121 @@ sys_thermals()
 }
 
 /*
+ * Get an entry from a proc meminfo object.
+ */
+static double
+sys_get_mentry(char *mentry, const char *instance)
+{
+    long mtotal;
+    char *token, *entry, *value, *saveptr;
+    const char *newline;
+    char this_entry[BUFFER_SIZE];
+
+    if ((entry = strcasestr((const char *)mentry, instance)) == NULL) {
+        syslog(LOG_ERR, "strcasestr: %s", strerror(errno));
+        return FALSE;
+    }
+
+    newline = strchr(entry, '\n');
+    size_t elen = newline ? (size_t)(newline - entry) : strlen(entry);
+    strncpy(this_entry, entry, elen);
+
+    if ((value = strstr(this_entry, "kB")) == NULL) {
+        syslog(LOG_ERR, "strstr: %s", strerror(errno));
+        return FALSE;
+    }
+    *value = '\0';
+
+    token = this_entry + strlen(instance);
+
+    mtotal = strtol(token, &saveptr, 10);
+    return (double) (mtotal / 1000000);
+}
+
+/*
+ * Get memory values: /proc/meminfo
+ * Memory Free, Memory Total
+ */
+static bool
+sys_mem(struct memory *mem)
+{
+    int zfd, rc;
+    char mentry[BUFFER_SIZE];
+
+    zfd = open(MEM_FILE, O_RDONLY);
+    if (zfd < 0) {
+        syslog(LOG_ERR, "open: %s", strerror(errno));
+        return FALSE;
+    }
+
+    if ((rc = read(zfd, mentry, BUFFER_SIZE)) <= 0) {
+        syslog(LOG_ERR, "read: %s", strerror(errno));
+        close(zfd);
+        return FALSE;
+    }
+
+    close(zfd);
+
+    mem->mtotal = sys_get_mentry(mentry, "MemTotal:");
+
+    mem->mfree = sys_get_mentry(mentry, "MemFree:");
+    return TRUE;
+}
+
+/*
  * CPU: /proc/stat
  * cpu  user nice system idle iowait irq softirq steal guest guest_nice
  */
 static double
 sys_cpu()
 {
-    return(double)12.2;
-}
+    long hz, num_cores, interval;
+    FILE *fs;
+    char *cpu_line, *cpu_value, *saveptr, *end;
+    double cpu, this_cpu, percentage;
+    static double prev_cpu = 0.0;
+    char cpu_entry[BUFFER_SIZE];
 
-/*
- * Memory Total: /proc/meminfo
- * MemTotal
- */
-static double
-sys_mem_total()
-{
-    return(double)15620184 / 1000000;
-}
+    hz = sysconf(_SC_CLK_TCK);
+    num_cores = sysconf(_SC_NPROCESSORS_ONLN);
 
-/*
- * Memory Free: /proc/meminfo
- * MemFree
- */
-static double
-sys_mem_free()
-{
-    return(double)5875700 / 1000000;
+    if ((fs = fopen(CPU_FILE, "r")) == NULL) {
+        syslog(LOG_ERR, "fopen: %s", strerror(errno));
+        return 0.0;
+    }
+
+    if ((cpu_line = fgets(cpu_entry, sizeof(cpu_entry), fs)) == NULL) {
+        syslog(LOG_ERR, "fgets: %s", strerror(errno));
+        return 0.0;
+    }
+
+    fclose(fs);
+
+    cpu_value = strtok_r(cpu_line, "cpu ", &saveptr);
+    cpu = 0.0;
+    interval = hz * num_cores * UI_SAMPLE_RATE;
+
+    // getting user, nice, system -> 3 entries
+    for (int i = 0; i < 3; i++) {
+        this_cpu =  strtod((const char *)cpu_value, &end);
+        if (end == cpu_value || errno == ERANGE) {
+            syslog(LOG_ERR, "strtod: %s", strerror(errno));
+            continue;
+        }
+
+        cpu += this_cpu;
+        cpu_value = strtok_r(NULL, " ", &saveptr);
+    }
+
+    if (prev_cpu != 0.0) {
+        // (delta ticks / (ticks per sec * num_cores * sample interval)) * 100.0
+        percentage = (((cpu - prev_cpu) / interval) * 100.0);
+    } else {
+        percentage = 0.0;
+    }
+
+    prev_cpu = cpu;
+    return percentage;
 }
 
 char *
@@ -171,7 +266,8 @@ sys_api(char *buffer, ssize_t bytes_recvd)
 {
     char *api, *therms;
     size_t slen = strlen("GET ");
-    double cpu, mem_free, mem_tot;
+    double cpu;
+    struct memory mem;
 
     // If not a get method, ignore
     if (strncmp("GET ", buffer, slen) == 0) {
@@ -186,12 +282,17 @@ sys_api(char *buffer, ssize_t bytes_recvd)
             }
 
             cpu = sys_cpu();
-            mem_tot = sys_mem_total();
-            mem_free = sys_mem_free();
+
+            if (sys_mem(&mem) == FALSE) {
+                syslog(LOG_ERR, "ERROR:sys_mem");
+                return NULL;
+            }
+
             therms = sys_thermals();
 
             if (snprintf(response, (size_t)RESPONSE_SYS_SIZE,
-                         "{\"cpu_percent\":%f, \"memory_free\":%.2f, \"memory_total\":%.2f, \"thermals\":%s}", cpu, mem_free, mem_tot, therms) < 0) {
+                         "{\"cpu_percent\":%f, \"memory_free\":%.2f, \"memory_total\":%.2f, \"thermals\":%s}",
+                         cpu, mem.mfree, mem.mtotal, therms) < 0) {
                 syslog(LOG_ERR, "snprintf: %s", strerror(errno));
                 free(response);
                 return NULL;
