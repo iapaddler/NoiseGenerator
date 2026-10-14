@@ -149,7 +149,7 @@ sys_thermals()
 static double
 sys_get_mentry(char *mentry, const char *instance)
 {
-    long mtotal;
+    double mtotal;
     char *token, *entry, *value, *saveptr;
     const char *newline;
     char this_entry[BUFFER_SIZE];
@@ -171,8 +171,8 @@ sys_get_mentry(char *mentry, const char *instance)
 
     token = this_entry + strlen(instance);
 
-    mtotal = strtol(token, &saveptr, 10);
-    return (double) (mtotal / 1000000);
+    mtotal = strtod(token, &saveptr);
+    return (double) (mtotal / (double)1000000);
 }
 
 /*

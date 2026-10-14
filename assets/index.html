@@ -127,8 +127,8 @@
                 let text = "";
 
                 //text += `CPU:    ${data.cpu_percent.toFixed(1)}%\n`;
-                text += `CPU:    ${data.cpu_percent}\n`;
-                text += `Memory: ${data.memory_free} / ${data.memory_total} GB\n`;
+                text += `CPU:    ${data.cpu_percent}%\n`;
+                text += `Memory: ${data.memory_free.toFixed(2)} GB free / ${data.memory_total.toFixed(2)} GB total\n`;
 
                 if (data.thermals && data.thermals.length > 0) {
                     text += "Thermal:\n";
