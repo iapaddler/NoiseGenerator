@@ -77,6 +77,8 @@
     <div class="system-info">
       <h3>System</h3>
       <pre id="systemStats">
+        Volume: --
+        Tone: --
         CPU: --
         Memory: --
         Thermals: --</pre>
@@ -126,6 +128,8 @@
 
                 let text = "";
 
+                text += `Volume: ${data.volume}\n`;
+                text += `Tone: ${data.tone}\n`;
                 //text += `CPU:    ${data.cpu_percent.toFixed(1)}%\n`;
                 text += `CPU:    ${data.cpu_percent}%\n`;
                 text += `Memory: ${data.memory_free.toFixed(2)} GB free / ${data.memory_total.toFixed(2)} GB total\n`;

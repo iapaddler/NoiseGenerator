@@ -291,8 +291,8 @@ sys_api(char *buffer, ssize_t bytes_recvd)
             therms = sys_thermals();
 
             if (snprintf(response, (size_t)RESPONSE_SYS_SIZE,
-                         "{\"cpu_percent\":%f, \"memory_free\":%.2f, \"memory_total\":%.2f, \"thermals\":%s}",
-                         cpu, mem.mfree, mem.mtotal, therms) < 0) {
+                         "{\"volume\":%f, \"tone\":%f, \"cpu_percent\":%f, \"memory_free\":%.2f, \"memory_total\":%.2f, \"thermals\":%s}",
+                         pw_get_vol(), pw_get_tone(), cpu, mem.mfree, mem.mtotal, therms) < 0) {
                 syslog(LOG_ERR, "snprintf: %s", strerror(errno));
                 free(response);
                 return NULL;
