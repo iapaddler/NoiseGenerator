@@ -42,7 +42,7 @@ sys_get_type(char *path)
 
     zfd = open(path, O_RDONLY);
     if (zfd < 0) {
-        syslog(LOG_ERR, "open: %s", strerror(errno));
+        syslog(LOG_ERR, "open: path: %s %s", path, strerror(errno));
         return NULL;
     }
 
@@ -68,7 +68,7 @@ sys_get_temp(char *path)
 
     zfd = open(path, O_RDONLY);
     if (zfd < 0) {
-        syslog(LOG_ERR, "open: %s", strerror(errno));
+        syslog(LOG_ERR, "open: path: %s %s", path, strerror(errno));
         return (double)0.0;
     }
 
@@ -187,7 +187,7 @@ sys_mem(struct memory *mem)
 
     zfd = open(MEM_FILE, O_RDONLY);
     if (zfd < 0) {
-        syslog(LOG_ERR, "open: %s", strerror(errno));
+        syslog(LOG_ERR, "open: path: %s %s", MEM_FILE, strerror(errno));
         return FALSE;
     }
 
@@ -223,7 +223,7 @@ sys_cpu()
     num_cores = sysconf(_SC_NPROCESSORS_ONLN);
 
     if ((fs = fopen(CPU_FILE, "r")) == NULL) {
-        syslog(LOG_ERR, "fopen: %s", strerror(errno));
+        syslog(LOG_ERR, "fopen: path: %s %s", CPU_FILE, strerror(errno));
         return 0.0;
     }
 

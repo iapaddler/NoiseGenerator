@@ -62,6 +62,7 @@ server_start(struct cmd_args *carg)
         close(server_fd);
         return -1;
     }
+
     /*
       Do we want to get the IP addr? Just for display
       int getaddrinfo(const char *restrict node,
@@ -189,7 +190,7 @@ httpd_start(void *arg)
 
                 ifd = open("assets/index.html", O_RDONLY);
                 if (ifd < 0) {
-                    syslog(LOG_ERR, "open: %s", strerror(errno));
+                    syslog(LOG_ERR, "open: path: assets/index.html %s", strerror(errno));
                     continue;
                 }
 
